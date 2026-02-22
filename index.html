@@ -6,17 +6,14 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #0a0a0a; color: white; }
         
-        /* Left Side Stats */
         #ui-stats { position: absolute; top: 20px; left: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; z-index: 10; }
         #ui-stats h1 { margin: 0; font-size: 2.5rem; color: #2ecc71; }
         #ui-stats p { margin: 5px 0 0 0; color: #aaa; font-size: 1.1rem; }
         
-        /* Right Side Upgrade Menu */
         #sidebar { 
             position: absolute; right: 0; top: 0; width: 320px; height: 100vh; 
             background: rgba(15, 15, 20, 0.95); border-left: 2px solid #333;
             display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
-            /* FIX: Bumped z-index to 110 so it sits ABOVE the pause menu! */
             backdrop-filter: blur(5px); z-index: 10; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
         }
         #sidebar h2 { margin-top: 0; border-bottom: 2px solid #444; padding-bottom: 10px; color: #fff; }
@@ -32,7 +29,6 @@
         .shop-btn .price { font-weight: bold; color: #e74c3c; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px;}
         .shop-btn:not(:disabled) .price { color: #2ecc71; }
 
-        /* Floating Text & Controls */
         #controls { position: absolute; bottom: 20px; left: 20px; color: #777; pointer-events: none; z-index: 10; }
         
         .floating-text {
@@ -45,7 +41,6 @@
             100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
         }
 
-        /* MAIN MENU SYSTEM */
         #main-menu {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(8px);
@@ -61,7 +56,6 @@
         }
         .menu-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); transform: scale(1.05); }
         
-        /* FIX: Wipe Save button styled for the menu */
         #resetBtn { border-color: #ff3333; }
         #resetBtn:hover { background: #ff3333; box-shadow: 0 0 20px rgba(255, 50, 50, 0.8); }
 
