@@ -545,7 +545,6 @@ function animate() {
                 }
             }
         });
-
         
         if (Math.abs(cube.position.x - collector.position.x) < 0.5 && Math.abs(cube.position.z - collector.position.z) < 2) {
             balance += cube.userData.value * globalMultiplier;
