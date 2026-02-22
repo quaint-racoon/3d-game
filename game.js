@@ -146,9 +146,13 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playCoinSound() {
     if (audioCtx.state === 'suspended') return;
     const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-    osc.type = 'sine'; osc.frequency.setValueAtTime(1000, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1500, audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    osc.type = 'sine'; 
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime); 
+    osc.frequency.exponentialRampToValueAtTime(1500, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime); 
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc.connect(gain); gain.connect(audioCtx.destination); 
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
 function createFloatingText(amount, pos3D) {
