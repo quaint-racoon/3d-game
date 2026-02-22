@@ -49,7 +49,11 @@ scene.add(controls.getObject());
 const playBtn = document.getElementById('play-btn');
 const mainMenu = document.getElementById('main-menu');
 
+// Locate this in your game.js
 playBtn.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume(); // This is the magic line for GitHub Pages
+    }
     controls.lock();
 });
 
