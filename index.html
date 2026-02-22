@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pro JS Tycoon - V2</title>
+    <title>abood factory - V2</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #0a0a0a; color: white; }
         
-        /* Left Side Stats */
         #ui-stats { position: absolute; top: 20px; left: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; z-index: 10; }
         #ui-stats h1 { margin: 0; font-size: 2.5rem; color: #2ecc71; }
         #ui-stats p { margin: 5px 0 0 0; color: #aaa; font-size: 1.1rem; }
         
-        /* Right Side Upgrade Menu */
         #sidebar { 
             position: absolute; right: 0; top: 0; width: 320px; height: 100vh; 
             background: rgba(15, 15, 20, 0.95); border-left: 2px solid #333;
@@ -19,7 +17,6 @@
             backdrop-filter: blur(5px); z-index: 10; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
         }
         #sidebar h2 { margin-top: 0; border-bottom: 2px solid #444; padding-bottom: 10px; color: #fff; }
-        
         #shop-items { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
         
         .shop-btn { 
@@ -32,22 +29,64 @@
         .shop-btn .price { font-weight: bold; color: #e74c3c; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px;}
         .shop-btn:not(:disabled) .price { color: #2ecc71; }
 
-        /* Floating Text & Controls */
-        #controls { position: absolute; bottom: 20px; left: 20px; color: #777; pointer-events: none; }
-        #controls button { pointer-events: auto; background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px;}
+        #controls { position: absolute; bottom: 20px; left: 20px; color: #777; pointer-events: none; z-index: 10; }
         
         .floating-text {
             position: absolute; color: #2ecc71; font-weight: bold; font-size: 1.5rem;
             text-shadow: 2px 2px 0 #000; pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
+            animation: floatUp 1s ease-out forwards; z-index: 5;
         }
         @keyframes floatUp {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
             100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
         }
+
+        #main-menu {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(8px);
+            z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .game-title { font-size: 5rem; color: #ffffff; text-shadow: 0 0 20px #aa00ff, 0 0 40px #aa00ff; margin-bottom: 40px; text-transform: uppercase; letter-spacing: 5px; text-align: center;}
+        #menu-buttons { display: flex; flex-direction: column; gap: 20px; }
+        .menu-btn {
+            background: #111; border: 2px solid #00ffff; color: white; text-transform: uppercase; letter-spacing: 2px;
+            padding: 15px 60px; font-size: 1.5rem; border-radius: 4px; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+        .menu-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); transform: scale(1.05); }
+        
+        #resetBtn { border-color: #ff3333; }
+        #resetBtn:hover { background: #ff3333; box-shadow: 0 0 20px rgba(255, 50, 50, 0.8); }
+
+        #credits-info {
+            display: none; text-align: center; background: rgba(0,0,0,0.8); padding: 40px; 
+            border-radius: 10px; border: 1px solid #aa00ff; box-shadow: 0 0 30px rgba(170, 0, 255, 0.3);
+        }
+        #credits-info h2 { color: #aa00ff; margin-top: 0; letter-spacing: 2px; }
+        #credits-info p { font-size: 1.2rem; color: #ccc; margin: 15px 0; }
+        #credits-info strong { color: #00ffff; }
     </style>
 </head>
 <body>
+    
+    <div id="main-menu">
+        <h1 class="game-title">Abood<br>Factory</h1>
+        
+        <div id="menu-buttons">
+            <button id="play-btn" class="menu-btn">Play</button>
+            <button id="credits-btn" class="menu-btn">Credits</button>
+            <button id="resetBtn" class="menu-btn">Wipe Save</button>
+        </div>
+
+        <div id="credits-info">
+            <h2>CREDITS</h2>
+            <p><strong>Game Developer:</strong> quaint racoon</p>
+            <p><strong>Face Donator:</strong> 0x3xpl0it3r</p>
+            <br>
+            <button id="back-btn" class="menu-btn" style="font-size: 1rem; padding: 10px 30px;">Back</button>
+        </div>
+    </div>
+
     <div id="ui-stats">
         <h1>$<span id="money">0</span></h1>
         <p>Multiplier: x<span id="multiplier">1</span></p>
@@ -55,14 +94,25 @@
 
     <div id="sidebar">
         <h2>Upgrades</h2>
-        <div id="shop-items">
-            </div>
+        <div id="shop-items"></div>
     </div>
 
     <div id="controls">
-        WASD: move | click red mat for money<br>
-        <button id="resetBtn">Wipe Save</button>
+        WASD: Move | Click Red Mat: Collect<br>
+        1: Buy Next Upgrade<br>
+        ESC: Pause Menu
     </div>
+
+    <script>
+        document.getElementById('credits-btn').onclick = () => {
+            document.getElementById('menu-buttons').style.display = 'none';
+            document.getElementById('credits-info').style.display = 'block';
+        };
+        document.getElementById('back-btn').onclick = () => {
+            document.getElementById('credits-info').style.display = 'none';
+            document.getElementById('menu-buttons').style.display = 'flex';
+        };
+    </script>
 
     <script type="importmap">
         { 
