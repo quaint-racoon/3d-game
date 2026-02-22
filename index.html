@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pro JS Tycoon - V2</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #0a0a0a; color: white; }
+        
+        /* Left Side Stats */
+        #ui-stats { position: absolute; top: 20px; left: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; z-index: 10; }
+        #ui-stats h1 { margin: 0; font-size: 2.5rem; color: #2ecc71; }
+        #ui-stats p { margin: 5px 0 0 0; color: #aaa; font-size: 1.1rem; }
+        
+        /* Right Side Upgrade Menu */
+        #sidebar { 
+            position: absolute; right: 0; top: 0; width: 320px; height: 100vh; 
+            background: rgba(15, 15, 20, 0.95); border-left: 2px solid #333;
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+            backdrop-filter: blur(5px); z-index: 10; box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+        }
+        #sidebar h2 { margin-top: 0; border-bottom: 2px solid #444; padding-bottom: 10px; color: #fff; }
+        
+        #shop-items { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+        
+        .shop-btn { 
+            background: #2c3e50; border: 2px solid #34495e; color: white; 
+            padding: 15px; border-radius: 8px; cursor: pointer; text-align: left;
+            transition: all 0.2s ease; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;
+        }
+        .shop-btn:hover:not(:disabled) { background: #34495e; transform: translateX(-5px); border-color: #3498db; }
+        .shop-btn:disabled { background: #1a252f; border-color: #222; color: #555; cursor: not-allowed; }
+        .shop-btn .price { font-weight: bold; color: #e74c3c; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 5px;}
+        .shop-btn:not(:disabled) .price { color: #2ecc71; }
+
+        /* Floating Text & Controls */
+        #controls { position: absolute; bottom: 20px; left: 20px; color: #777; pointer-events: none; }
+        #controls button { pointer-events: auto; background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px;}
+        
+        .floating-text {
+            position: absolute; color: #2ecc71; font-weight: bold; font-size: 1.5rem;
+            text-shadow: 2px 2px 0 #000; pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-stats">
+        <h1>$<span id="money">0</span></h1>
+        <p>Multiplier: x<span id="multiplier">1</span></p>
+    </div>
+
+    <div id="sidebar">
+        <h2>Upgrades</h2>
+        <div id="shop-items">
+            </div>
+    </div>
+
+    <div id="controls">
+        WASD: move | click red mat for money<br>
+        <button id="resetBtn">Wipe Save</button>
+    </div>
+
+    <script type="importmap">
+        { 
+            "imports": { 
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            } 
+        }
+    </script>
+    <script type="module" src="game.js"></script>
+</body>
+</html>
