@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// --- SAVE SYSTEM ---
 let balance = parseInt(localStorage.getItem('tycoon_money')) || 0;
 let boughtItems = JSON.parse(localStorage.getItem('tycoon_items')) || [];
 let globalMultiplier = 1;
@@ -13,8 +12,6 @@ function saveData() {
     document.getElementById('money').innerText = balance;
 }
 
-// --- SHOP DATA ---
-// UPDATED: Dropper4 and Upgrader4 now sit on z: -2.5 (The second lane!)
 const shopItems = [
     { id: 'dropper1', name: 'Starter Dropper', cost: 0, type: 'dropper', val: 5, speed: 2000, modelUrl: 'models/dropper.glb', x: -5.5, y: 1.5, z: 0, req: null },
     { id: 'conveyor_rails', name: 'Conveyor Rails', cost: 25, type: 'deco', modelUrl: 'models/rails.glb', x: -1, y: 0.25, z: 0, req: 'dropper1' },
@@ -26,9 +23,7 @@ const shopItems = [
     { id: 'walls2', name: 'Steel Walls', cost: 2500, type: 'structure', req: 'upgrader2' },
     { id: 'dropper3', name: 'Quantum Dropper', cost: 5000, type: 'dropper', val: 100, speed: 1000, x: 1, y: 1.5, z: 0, req: 'walls2' },
     { id: 'upgrader3', name: 'Antimatter Chamber (x5)', cost: 12000, type: 'upgrader', mult: 5, modelUrl: 'models/upgrader_antimatter.glb', x: 2.5, y: 0.5, z: 0, req: 'dropper3' },
-    { id: 'roof', name: 'Glass Factory Roof', cost: 25000, type: 'structure', req: 'upgrader3' },
-    
-    // NEW COORDINATES AND COLORS FOR THE VOID LANE
+    { id: 'roof', name: 'Factory Roof', cost: 10000, type: 'structure', req: 'upgrader3' },
     { id: 'dropper4', name: 'Void Extractor', cost: 50000, type: 'dropper', val: 500, speed: 500, x: -5, y: 1.5, z: -2.5, req: 'roof' },
     { id: 'upgrader4', name: 'The Singularity (x10)', cost: 100000, type: 'upgrader', mult: 10, color: 0xaa00ff, x: 2, y: 0.5, z: -2.5, req: 'dropper4' }
 ];
@@ -36,12 +31,11 @@ const shopItems = [
 const moneyCubes = [];
 const activeMachines = [];
 
-// --- THREE.JS SETUP ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a14);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 2, 8); 
+camera.position.set(0, 2, 8);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -52,20 +46,48 @@ document.body.appendChild(renderer.domElement);
 const controls = new PointerLockControls(camera, document.body);
 scene.add(controls.getObject());
 
-renderer.domElement.addEventListener('click', () => controls.lock());
+const playBtn = document.getElementById('play-btn');
+const mainMenu = document.getElementById('main-menu');
 
+playBtn.addEventListener('click', () => {
+    controls.lock();
+});
+
+controls.addEventListener('lock', () => {
+    mainMenu.style.display = 'none';
+});
+
+
+controls.addEventListener('unlock', () => {
+    mainMenu.style.display = 'flex';
+    playBtn.innerText = 'Resume'; 
+});
 const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
 const moveState = { forward: false, backward: false, left: false, right: false, canJump: false };
 let prevTime = performance.now();
 
-document.addEventListener('keydown', (e) => {
-    switch (e.code) {
+
+document.addEventListener('keydown', (event) => {
+    switch (event.code) {
         case 'KeyW': moveState.forward = true; break;
         case 'KeyA': moveState.left = true; break;
         case 'KeyS': moveState.backward = true; break;
         case 'KeyD': moveState.right = true; break;
-        case 'Space': if (moveState.canJump) { velocity.y += 25; moveState.canJump = false; } break;
+        case 'Space':
+            if (moveState.canJump === true) {
+                velocity.y += 25;
+                moveState.canJump = false;
+            }
+            break;
+        
+        case 'Digit1':
+            
+            const nextAvailableUpgrade = document.querySelector('.shop-btn:not(:disabled)');
+            if (nextAvailableUpgrade) {
+                nextAvailableUpgrade.click();
+            }
+            break;
     }
 });
 document.addEventListener('keyup', (e) => {
@@ -77,22 +99,22 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
-// --- LIGHTING ---
+
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
 const interiorLight = new THREE.DirectionalLight(0xffffff, 1.5);
-interiorLight.position.set(5, 10, 5); 
+interiorLight.position.set(5, 10, 5);
 interiorLight.target.position.set(0, 0, 0);
 interiorLight.castShadow = true;
 interiorLight.shadow.camera.left = -20; interiorLight.shadow.camera.right = 20;
 interiorLight.shadow.camera.top = 20; interiorLight.shadow.camera.bottom = -20;
 interiorLight.shadow.camera.near = 0.5; interiorLight.shadow.camera.far = 50;
 interiorLight.shadow.mapSize.width = 2048; interiorLight.shadow.mapSize.height = 2048;
-interiorLight.shadow.bias = -0.001; 
+interiorLight.shadow.bias = -0.001;
 scene.add(interiorLight); scene.add(interiorLight.target);
 
-// --- PROCEDURAL TEXTURES ---
+
 function createProceduralTexture(type) {
     const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
     if (type === 'floor') {
@@ -100,14 +122,14 @@ function createProceduralTexture(type) {
         ctx.fillStyle = '#2a2a2a'; ctx.fillRect(0, 0, 128, 128); ctx.fillRect(128, 128, 128, 128);
     } else if (type === 'wall') {
         ctx.fillStyle = '#3b4248'; ctx.fillRect(0, 0, 256, 256);
-        ctx.fillStyle = '#2f353a'; for(let i=0; i<256; i+=32) { ctx.fillRect(i, 0, 4, 256); }
+        ctx.fillStyle = '#2f353a'; for (let i = 0; i < 256; i += 32) { ctx.fillRect(i, 0, 4, 256); }
     }
     const tex = new THREE.CanvasTexture(canvas); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
     if (type === 'floor') tex.repeat.set(20, 20); if (type === 'wall') tex.repeat.set(10, 2);
     return tex;
 }
 
-// --- FACTORY PROGRESSION ---
+
 const factoryUpgrades = { walls1: new THREE.Group(), walls2: new THREE.Group(), roof: new THREE.Group() };
 factoryUpgrades.walls1.visible = false; factoryUpgrades.walls2.visible = false; factoryUpgrades.roof.visible = false;
 scene.add(factoryUpgrades.walls1); scene.add(factoryUpgrades.walls2); scene.add(factoryUpgrades.roof);
@@ -118,28 +140,28 @@ function buildFactoryEnvironment() {
 
     const wallHeight = 12; const wallMat = new THREE.MeshStandardMaterial({ map: createProceduralTexture('wall'), roughness: 0.7, metalness: 0.4 });
     const pillarMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.8 });
-    [[-10,-10], [10,-10], [-10,10], [10,10], [-19,-19], [19,-19], [-19,19], [19,19]].forEach(pos => {
-        const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.5, wallHeight, 1.5), pillarMat); pillar.position.set(pos[0], wallHeight/2, pos[1]);
+    [[-10, -10], [10, -10], [-10, 10], [10, 10], [-19, -19], [19, -19], [-19, 19], [19, 19]].forEach(pos => {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(1.5, wallHeight, 1.5), pillarMat); pillar.position.set(pos[0], wallHeight / 2, pos[1]);
         pillar.castShadow = true; pillar.receiveShadow = true; factoryUpgrades.walls1.add(pillar);
     });
 
-    const addWall = (w,h,d, x,y,z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; factoryUpgrades.walls2.add(m); };
-    addWall(40, wallHeight, 1, 0, wallHeight/2, -19.5); addWall(1, wallHeight, 40, -19.5, wallHeight/2, 0); addWall(1, wallHeight, 40, 19.5, wallHeight/2, 0);
-    addWall(15, wallHeight, 1, -12.5, wallHeight/2, 19.5); addWall(15, wallHeight, 1, 12.5, wallHeight/2, 19.5); addWall(10, 4, 1, 0, 10, 19.5);
+    const addWall = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; factoryUpgrades.walls2.add(m); };
+    addWall(40, wallHeight, 1, 0, wallHeight / 2, -19.5); addWall(1, wallHeight, 40, -19.5, wallHeight / 2, 0); addWall(1, wallHeight, 40, 19.5, wallHeight / 2, 0);
+    addWall(15, wallHeight, 1, -12.5, wallHeight / 2, 19.5); addWall(15, wallHeight, 1, 12.5, wallHeight / 2, 19.5); addWall(10, 4, 1, 0, 10, 19.5);
 
     const roof = new THREE.Mesh(new THREE.BoxGeometry(40.5, 0.5, 40.5), new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.2, roughness: 0.1, metalness: 0.9, side: THREE.DoubleSide }));
     roof.position.y = wallHeight + 0.25; factoryUpgrades.roof.add(roof);
 }
 buildFactoryEnvironment();
 
-// --- GAME LOGIC MESHES ---
+
 const conveyor = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.7, 1.3), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 }));
 conveyor.position.set(-1, 0.07, 0); conveyor.receiveShadow = true; scene.add(conveyor);
 
-// UPDATED: Collector is now much wider to catch both lanes!
+
 const collectorMat = new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0x550000, roughness: 0.2, metalness: 0.8 });
 const collector = new THREE.Mesh(new THREE.BoxGeometry(1, 0.4, 4.5), collectorMat);
-collector.position.set(4.75, 0.2, -1.25); // Center it between z:0 and z:-2.5
+collector.position.set(4.75, 0.2, -1.25); 
 collector.receiveShadow = true; collector.castShadow = true; scene.add(collector);
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -158,28 +180,28 @@ function createFloatingText(amount, pos3D) {
     document.body.appendChild(div); setTimeout(() => div.remove(), 1000);
 }
 
-// --- BUILDING LOGIC ---
+
 let masterCoinModel = null;
 const gltfLoader = new GLTFLoader();
 
 gltfLoader.load('models/money_stack.glb', (gltf) => {
     masterCoinModel = gltf.scene;
-    masterCoinModel.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }});
+    masterCoinModel.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
 }, undefined, (e) => console.warn("No money model found."));
 
 function spawnMoney(machineData) {
     let coin;
     if (masterCoinModel) {
         coin = masterCoinModel.clone();
-        coin.traverse((child) => { if (child.isMesh) { coin.scale.set(0.5, 0.5, 0.5); child.geometry.computeBoundingBox(); child.geometry.center(); }});
+        coin.traverse((child) => { if (child.isMesh) { coin.scale.set(0.5, 0.5, 0.5); child.geometry.computeBoundingBox(); child.geometry.center(); } });
     } else {
         coin = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0x2ecc71 }));
         coin.scale.set(0.5, 0.5, 0.5); coin.geometry.computeBoundingBox(); coin.geometry.center();
     }
     coin.position.set(machineData.x, machineData.y - 0.8, machineData.z);
     coin.castShadow = true;
-    // UPDATED: Tell the cube which Z-lane it belongs to!
-    coin.userData = { value: machineData.val, upgradedBy: [], targetZ: machineData.z }; 
+    
+    coin.userData = { value: machineData.val, upgradedBy: [], targetZ: machineData.z };
     scene.add(coin); moneyCubes.push(coin);
 }
 
@@ -200,20 +222,72 @@ function buildItem(item) {
     if (item.id === 'walls1') { factoryUpgrades.walls1.visible = true; return; }
     if (item.id === 'walls2') { factoryUpgrades.walls2.visible = true; return; }
     if (item.id === 'roof') { factoryUpgrades.roof.visible = true; return; }
+    if (['dropper1', 'dropper2', 'dropper3'].includes(item.id)) {
+        const supportGroup = new THREE.Group();
+        
+        supportGroup.position.set(item.x, 2.5, item.z);
+    
+        const mat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.8, roughness: 0.5 });
+        
+        
+        
+        const basePlateGeo = new THREE.BoxGeometry(1.4, 0.15, 1.4);
+        const basePlate = new THREE.Mesh(basePlateGeo, mat);
+        basePlate.position.set(0, 0, 0); 
+        basePlate.castShadow = true;
+        basePlate.receiveShadow = true;
+        supportGroup.add(basePlate);
+    
+        
+        const postGeo = new THREE.CylinderGeometry(0.08, 0.08, 9.5, 8);
+        const offsets = [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]];
+        
+        
+        const topPlateGeo = new THREE.BoxGeometry(0.4, 0.1, 0.4);
+    
+        offsets.forEach(off => {
+            
+            const post = new THREE.Mesh(postGeo, mat);
+            post.position.set(off[0], 4.75, off[1]);
+            post.castShadow = true;
+            supportGroup.add(post);
+    
+            
+            const topPlate = new THREE.Mesh(topPlateGeo, mat);
+            topPlate.position.set(off[0], 9.5, off[1]);
+            topPlate.castShadow = true;
+            supportGroup.add(topPlate);
+        });
 
+        
+        for (let h = 2; h <= 8; h += 2) {
+            const beamX1 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.1), mat); beamX1.position.set(0, h, 0.5); supportGroup.add(beamX1);
+            const beamX2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.1), mat); beamX2.position.set(0, h, -0.5); supportGroup.add(beamX2);
+            const beamZ1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.1), mat); beamZ1.position.set(0.5, h, 0); supportGroup.add(beamZ1);
+            const beamZ2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.1), mat); beamZ2.position.set(-0.5, h, 0); supportGroup.add(beamZ2);
+
+            
+            const neonMat = new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 1 });
+            const neon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.4, 0.12), neonMat);
+            neon.position.set(0.5, h, 0.5);
+            supportGroup.add(neon);
+        }
+
+        scene.add(supportGroup);
+    }
     if (item.id === 'lights1') {
         const lightsGroup = new THREE.Group();
         const zPositions = [-8, 8]; const xPositions = [-12, -6, 0, 6, 12];
         const tubeMat = new THREE.MeshStandardMaterial({ emissive: 0xffffff, emissiveIntensity: 2, color: 0xffffff });
         const housingMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8 });
-        const ropeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 }); 
+        const ropeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
         const tubeGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
         const housingGeo = new THREE.BoxGeometry(4.2, 0.3, 0.6);
         const ropeGeo = new THREE.CylinderGeometry(0.02, 0.02, 3, 4);
 
         for (let r = 0; r < zPositions.length; r++) {
             for (let c = 0; c < xPositions.length; c++) {
-                const fixture = new THREE.Group(); fixture.position.set(xPositions[c], 9, zPositions[r]); 
+                const fixture = new THREE.Group(); fixture.position.set(xPositions[c], 9, zPositions[r]);
                 const tube = new THREE.Mesh(tubeGeo, tubeMat); tube.rotation.z = Math.PI / 2; fixture.add(tube);
                 const housing = new THREE.Mesh(housingGeo, housingMat); housing.position.y = 0.2; fixture.add(housing);
                 const rope1 = new THREE.Mesh(ropeGeo, ropeMat); rope1.position.set(-1.8, 1.65, 0); fixture.add(rope1);
@@ -222,7 +296,7 @@ function buildItem(item) {
                 lightsGroup.add(fixture);
             }
         }
-        scene.add(lightsGroup); return; 
+        scene.add(lightsGroup); return;
     }
 
     if (item.id === 'dropper3') {
@@ -233,7 +307,7 @@ function buildItem(item) {
             for (let x = 0; x <= 512; x += 64) {
                 for (let y = 0; y <= 512; y += 64) {
                     ctx.globalAlpha = 0.2; ctx.strokeRect(x, y, 64, 64); ctx.globalAlpha = 1.0;
-                    if ((x + y) % 128 === 0) { ctx.beginPath(); ctx.arc(x + 32, y + 32, 14, 0, Math.PI * 2); ctx.fillStyle = '#00ffff'; ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 32, y + 32); ctx.lineTo(x + 64, y + 64); ctx.stroke(); } 
+                    if ((x + y) % 128 === 0) { ctx.beginPath(); ctx.arc(x + 32, y + 32, 14, 0, Math.PI * 2); ctx.fillStyle = '#00ffff'; ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 32, y + 32); ctx.lineTo(x + 64, y + 64); ctx.stroke(); }
                     else if (Math.abs(x - y) % 128 === 0) { ctx.beginPath(); ctx.arc(x + 32, y + 32, 6, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); }
                 }
             }
@@ -241,15 +315,15 @@ function buildItem(item) {
             quantumTex.repeat.set(3, 3); quantumTex.needsUpdate = true; quantumTex.colorSpace = THREE.SRGBColorSpace;
             const sciFiMat = new THREE.MeshStandardMaterial({ color: 0x11111a, metalness: 0.9, roughness: 0.2, map: quantumTex, emissiveMap: quantumTex, emissive: 0x00ffff, emissiveIntensity: 1.5 });
             model.position.set(item.x, item.y, item.z);
-            model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; child.material = sciFiMat; }});
+            model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; child.material = sciFiMat; } });
             scene.add(model);
             const timerId = setInterval(() => spawnMoney(item), item.speed); activeMachines.push({ mesh: model, type: 'dropper', timer: timerId });
         }, undefined, (error) => { console.error("Failed to load base dropper.", error); });
-        return; 
+        return;
     }
 
-    // --- NEW: THE VOID EXTRACTOR (Cube with glowing hole + new belt) ---
-    // --- UPDATED: THE VOID EXTRACTOR (Archway / Doorway) ---
+    
+    
     if (item.id === 'dropper4') {
         const group = new THREE.Group();
         group.position.set(item.x, item.y, item.z);
@@ -257,47 +331,47 @@ function buildItem(item) {
         const mat = new THREE.MeshStandardMaterial({ color: 0x111115, metalness: 0.9, roughness: 0.2 });
         const glowMat = new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: 0xaa00ff, emissiveIntensity: 3 });
 
-        // The base of the group is at Y=1.5. The floor is at Y=-0.5. 
-        // This means we need walls that go down exactly 2.0 units to touch the floor.
-        const floorY = -0.25; // Center Y for a 3.5 tall box to touch the ground
+        
+        
+        const floorY = -0.25; 
         const wallHeight = 3.5;
 
-        // 1. Left and Right Pillars (Going all the way to the floor)
+        
         const left = new THREE.Mesh(new THREE.BoxGeometry(2.5, wallHeight, 0.5), mat);
         left.position.set(-0.25, floorY, -0.95);
-        
+
         const right = new THREE.Mesh(new THREE.BoxGeometry(2.5, wallHeight, 0.5), mat);
         right.position.set(-0.25, floorY, 0.95);
 
-        // 2. The Roof (Sitting on top of the pillars)
+        
         const top = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.5, 2.4), mat);
         top.position.set(-0.25, 1.75, 0);
 
-        // 3. The Solid Back Wall (Closing the machine from behind)
+        
         const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.0, 2.4), mat);
         back.position.set(-1.25, 0, 0);
 
-        // 4. The Neon Purple Archway Trim (Door frame)
+        
         const trimL = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallHeight, 0.1), glowMat);
         trimL.position.set(1.0, floorY, -0.7);
-        
+
         const trimR = new THREE.Mesh(new THREE.BoxGeometry(0.1, wallHeight, 0.1), glowMat);
         trimR.position.set(1.0, floorY, 0.7);
-        
+
         const trimTop = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.5), glowMat);
         trimTop.position.set(1.0, 1.55, 0);
 
-        // 5. The Pitch Black Void (Placed deep inside the archway)
+        
         const voidPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.4, wallHeight), new THREE.MeshBasicMaterial({ color: 0x000000 }));
         voidPlane.rotation.y = Math.PI / 2;
-        voidPlane.position.set(-0.99, floorY, 0); 
+        voidPlane.position.set(-0.99, floorY, 0);
 
         group.add(left, right, top, back, trimL, trimR, trimTop, voidPlane);
-        group.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+        group.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
 
-        // 6. The 2nd Conveyor Belt (Tucked perfectly inside the void)
+        
         const conveyor2 = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.7, 1.3), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 }));
-        conveyor2.position.set(4, -1.43, 0); 
+        conveyor2.position.set(4, -1.43, 0);
         conveyor2.receiveShadow = true;
         group.add(conveyor2);
 
@@ -307,7 +381,7 @@ function buildItem(item) {
         return;
     }
 
-    // --- UPDATED: THE SINGULARITY ---
+    
     if (item.id === 'upgrader4') {
         const group = new THREE.Group();
         group.position.set(item.x, item.y, item.z);
@@ -316,19 +390,19 @@ function buildItem(item) {
         const outerMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x7700ff, emissiveIntensity: 1, transparent: true, opacity: 0.8 });
 
         const spinnerGroup = new THREE.Group();
-        // Lowered the center to exactly match the height of the money cubes
-        spinnerGroup.position.y = 0.2; 
         
-        for(let i=0; i<4; i++) {
+        spinnerGroup.position.y = 0.2;
+
+        for (let i = 0; i < 4; i++) {
             const angle = (i / 4) * Math.PI * 2;
             const objGroup = new THREE.Group();
+
             
-            // MATH FIX: Plot the cubes in a circle around the Y and Z axes!
             objGroup.position.set(0, Math.cos(angle) * 1.5, Math.sin(angle) * 1.5);
 
             const innerCube = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), coreMat);
             const outerCube = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), outerMat);
-            
+
             objGroup.add(innerCube, outerCube);
             objGroup.userData = { inner: innerCube, outer: outerCube };
             spinnerGroup.add(objGroup);
@@ -336,7 +410,7 @@ function buildItem(item) {
 
         group.add(spinnerGroup);
         scene.add(group);
-        
+
         activeMachines.push({ mesh: group, spinner: spinnerGroup, type: 'singularity', data: item });
         return;
     }
@@ -349,14 +423,14 @@ function buildItem(item) {
         } else if (item.type === 'upgrader') {
             activeMachines.push({ mesh, type: 'upgrader', data: item });
         } else if (item.id === 'conveyor_rails') {
-            mesh.scale.set(3.5, 2.5, 0.45); mesh.position.y = 0; 
+            mesh.scale.set(3.5, 2.5, 0.45); mesh.position.y = 0;
         }
     };
 
     if (item.modelUrl) {
         gltfLoader.load(item.modelUrl, (gltf) => {
             const model = gltf.scene; model.position.set(item.x, item.y, item.z);
-            model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }});
+            model.traverse((child) => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
             setupMachineLogic(model);
         }, undefined, () => setupMachineLogic(createFallbackMesh(item)));
     } else { setupMachineLogic(createFallbackMesh(item)); }
@@ -373,10 +447,10 @@ function updateShopUI() {
             else {
                 btn.onclick = () => {
                     if (audioCtx.state === 'suspended') audioCtx.resume();
-                    balance -= item.cost; boughtItems.push(item.id); buildItem(item); saveData(); updateShopUI(); 
+                    balance -= item.cost; boughtItems.push(item.id); buildItem(item); saveData(); updateShopUI();
                 };
             }
-            container.appendChild(btn); nextItemFound = true; break; 
+            container.appendChild(btn); nextItemFound = true; break;
         }
     }
     if (!nextItemFound) container.innerHTML = '<div style="text-align:center; color:#888; padding: 20px;">All upgrades purchased!</div>';
@@ -384,7 +458,7 @@ function updateShopUI() {
 
 document.getElementById('money').innerText = balance;
 boughtItems.forEach(id => { const itemData = shopItems.find(i => i.id === id); if (itemData) buildItem(itemData); });
-updateShopUI(); 
+updateShopUI();
 
 document.getElementById('resetBtn').onclick = () => { localStorage.clear(); location.reload(); };
 
@@ -402,11 +476,11 @@ window.addEventListener('pointerdown', () => {
 function animate() {
     requestAnimationFrame(animate);
     const time = performance.now();
-    
+
     if (controls.isLocked) {
         const delta = (time - prevTime) / 1000;
-        velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta; velocity.y -= 9.8 * 10.0 * delta; 
-        direction.z = Number(moveState.forward) - Number(moveState.backward); direction.x = Number(moveState.right) - Number(moveState.left); direction.normalize(); 
+        velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta; velocity.y -= 9.8 * 10.0 * delta;
+        direction.z = Number(moveState.forward) - Number(moveState.backward); direction.x = Number(moveState.right) - Number(moveState.left); direction.normalize();
         if (moveState.forward || moveState.backward) velocity.z -= direction.z * 40.0 * delta;
         if (moveState.left || moveState.right) velocity.x -= direction.x * 40.0 * delta;
         controls.moveRight(-velocity.x * delta); controls.moveForward(-velocity.z * delta);
@@ -414,25 +488,25 @@ function animate() {
 
         const pos = controls.getObject().position;
         if (pos.y < 2) { velocity.y = 0; pos.y = 2; moveState.canJump = true; }
-        const limit = 18.5; 
+        const limit = 18.5;
         if (pos.x < -limit) { pos.x = -limit; velocity.x = 0; }
         if (pos.x > limit) { pos.x = limit; velocity.x = 0; }
         if (pos.z < -limit) { pos.z = -limit; velocity.z = 0; }
         if (pos.z > limit) {
-            if (pos.x < -4 || pos.x > 4) { pos.z = limit; velocity.z = 0; } 
+            if (pos.x < -4 || pos.x > 4) { pos.z = limit; velocity.z = 0; }
             else if (pos.z > 30) { pos.z = 30; velocity.z = 0; }
         }
     }
     prevTime = time;
 
-    // UPDATED: Animate the Singularity
-    // UPDATED: Animate the Singularity
-    activeMachines.forEach(mach => { 
-        if (mach.type === 'upgrader') mach.mesh.rotation.x += 0.02; 
+    
+    
+    activeMachines.forEach(mach => {
+        if (mach.type === 'upgrader') mach.mesh.rotation.x += 0.02;
         if (mach.type === 'singularity') {
             mach.spinner.rotation.x -= 0.03;
             mach.spinner.children.forEach(obj => {
-                // Spin the individual cubes
+                
                 obj.userData.inner.rotation.x += 0.05; obj.userData.inner.rotation.y += 0.05;
                 obj.userData.outer.rotation.x -= 0.02; obj.userData.outer.rotation.y -= 0.02;
             });
@@ -442,25 +516,25 @@ function animate() {
     collector.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
 
     for (let i = moneyCubes.length - 1; i >= 0; i--) {
-        const cube = moneyCubes[i]; 
+        const cube = moneyCubes[i];
+
         
-        // Move towards the collector
         if (cube.position.x < collector.position.x) cube.position.x += 0.05;
+
         
-        // UPDATED: Keep the cube exactly in the lane it spawned in!
         if (cube.position.z > cube.userData.targetZ + 0.05) cube.position.z -= 0.02;
         else if (cube.position.z < cube.userData.targetZ - 0.05) cube.position.z += 0.02;
-        
+
         cube.rotation.y += 0.02;
 
         activeMachines.forEach(mach => {
-            // Check upgrades (Both normal and singularity)
+            
             if ((mach.type === 'upgrader' || mach.type === 'singularity') && !cube.userData.upgradedBy.includes(mach.data.id)) {
-                // Ensure the machine and cube are in the same lane using Z!
+                
                 if (Math.abs(cube.position.x - mach.mesh.position.x) < 0.4 && Math.abs(cube.position.z - mach.mesh.position.z) < 0.5) {
-                    cube.userData.value *= mach.data.mult; 
+                    cube.userData.value *= mach.data.mult;
                     cube.userData.upgradedBy.push(mach.data.id);
-                    
+
                     const glowColor = mach.data.color || 0x00ffff;
                     cube.traverse((child) => {
                         if (child.isMesh) {
@@ -472,7 +546,7 @@ function animate() {
             }
         });
 
-        // Collect the money
+        
         if (Math.abs(cube.position.x - collector.position.x) < 0.5 && Math.abs(cube.position.z - collector.position.z) < 2) {
             balance += cube.userData.value * globalMultiplier;
             createFloatingText(cube.userData.value * globalMultiplier, cube.position);
